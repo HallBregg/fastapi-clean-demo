@@ -1,0 +1,15 @@
+[build-system]
+# requires is a list of packages that are needed to build your package.
+# You don’t need to install them; build frontends like pip will install them automatically
+# in a temporary, isolated virtual environment for use during the build process.
+requires = ["hatchling"]
+# build-backend is the name of the Python object that frontends will use to perform the build.
+build-backend = "hatchling.build"
+
+[project]
+name="noname"
+version = "0.0.1"
+authors = [{name="HallBregg", email="hallbregg0@gmail.com"}]
+description = "Some small noname project for learning."
+readme = "README.md"
+requires-python = ">=3.9"
