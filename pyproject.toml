@@ -11,5 +11,5 @@ name="noname"
 version = "0.0.1"
 authors = [{name="HallBregg", email="hallbregg0@gmail.com"}]
 description = "Some small noname project for learning."
-readme = "README.md"
+#readme = "README.md"
 requires-python = ">=3.9"

@@ -12,3 +12,8 @@ Build dist
 pip install --upgrade pip build
 python -m build
 ```
+
+Run secure container with no capabilities user:
+```shell
+docker run -it --rm --cap-drop ALL --user 1000 noname
+```
