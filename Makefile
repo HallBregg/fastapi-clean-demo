@@ -1,4 +1,4 @@
-build-dist:
+local-build-dist:
 	pip install --upgrade pip build
 	python -m build
 
@@ -15,9 +15,13 @@ docker-run-development-bash:
 	make docker-build-development
 	docker run \
 		--rm -it \
+		-p 8080:8080 \
 		-v ${PWD}/src/noname:/opt/noname/noname \
 		-v ${PWD}/tests:/opt/noname/tests noname.dev \
 		bash
 
-run-local-uvicorn:
-	uvicorn noname.main:app --reload
+local-run-uvicorn:
+	uvicorn noname.main:app --reload --workers 1
+
+local-run-gunicorn:
+	gunicorn -k uvicorn.workers.UvicornWorker --reload --workers 1 noname.main:app

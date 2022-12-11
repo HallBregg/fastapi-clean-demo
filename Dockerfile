@@ -4,7 +4,8 @@ LABEL maintainer="hallbregg0@gmail.com"
 
 RUN apt-get update &&\
     apt-get upgrade &&\
-    apt-get install -y libcap2-bin inetutils-ping
+    apt-get install -y htop
+#    libcap2-bin inetutils-ping
 
 WORKDIR /opt/noname
 
@@ -46,5 +47,6 @@ RUN pip install .
 
 FROM base as production
 
+ENV PYTHONASYNCIODEBUG 1
 COPY --from=production-build /opt/noname/venv /opt/noname/venv
 CMD ["python", "-c", "from noname import __version__; print(f'version in prod: {__version__}')"]
