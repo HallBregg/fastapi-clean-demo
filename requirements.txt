@@ -3,3 +3,4 @@ uvicorn
 gunicorn
 statsd
 sqlalchemy[asyncio]
+asyncpg

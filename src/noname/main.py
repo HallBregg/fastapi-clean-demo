@@ -2,7 +2,8 @@ import logging
 import random
 
 from fastapi import FastAPI, Depends
-from sqlalchemy import create_engine, MetaData, Column, Table, String, Integer
+from sqlalchemy import MetaData, Column, Table, String, Integer
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, Session
 
 from noname.services.hostname import HostnameService
@@ -19,15 +20,10 @@ view_logger = logging.getLogger('main.view')
 router = APIRouter(route_class=TimedRoute)
 app = FastAPI()
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
-engine = create_engine(
+# SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
+SQLALCHEMY_DATABASE_URL = "postgresql+asyncpg://example:example@localhost/example"
+engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-)
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
 )
 
 
@@ -40,16 +36,33 @@ books = Table(
 )
 
 
-def create_current_database():
-    metadata.create_all(engine)
+def async_session_generator():
+    return sessionmaker(
+        bind=engine,
+        autocommit=False,
+        autoflush=False,
+        class_=AsyncSession
+    )
 
 
-def db_client():
-    db = SessionLocal()
+async def get_session():
     try:
-        yield db
+        async_session = async_session_generator()
+
+        async with async_session() as session:
+            yield session
+    except Exception:
+        await session.rollback()
+        raise
     finally:
-        db.close()
+        await session.close()
+
+
+def create_current_database():
+    from sqlalchemy import create_engine
+
+    local_engine = create_engine("postgresql://example:example@localhost/example", connect_args={"check_same_thread": False},)
+    metadata.create_all(local_engine)
 
 
 @router.get('/')
@@ -65,9 +78,10 @@ async def home():
 
 
 @router.get('/test')
-async def test(db: Session = Depends(db_client)):
+async def test(db: Session = Depends(get_session)):
+    cursor = await db.execute('SELECT 1 as result, pg_sleep(5) as sleep;')
+    result, _ = cursor.fetchone()
     view_logger.debug('Hello World', extra={'hello': 'extra'})
-    [result] = db.execute('SELECT 1;').first()
     return {'hello': result}
 
 
