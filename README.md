@@ -35,3 +35,6 @@ We can test performance by executing:
 ```shell
 ab -n 50 -c 5 -k http://local.awaitq.com:8000/
 ```
+
+We could use Poetry for dependency management, but only for local (non docker).
+In docker, we could export from portainer requirements.txt file and install dependencies by pip.

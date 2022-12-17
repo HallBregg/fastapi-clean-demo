@@ -2,9 +2,13 @@ FROM python:3.11-slim-bullseye as base
 
 LABEL maintainer="hallbregg0@gmail.com"
 
+ENV DEBIAN_FRONTEND noninteractive
+
 RUN apt-get update &&\
     apt-get upgrade &&\
-    apt-get install -y htop
+    apt-get install --no-install-recommends -y htop &&\
+    apt-get clean &&\
+    rm -rf /var/lib/apt/lists/*
 #    libcap2-bin inetutils-ping
 
 WORKDIR /opt/noname
@@ -34,19 +38,21 @@ COPY ./pyproject.toml .
 
 FROM base-deps as development
 
-RUN pip install -r requirements.dev.txt
+ENV PYTHONASYNCIODEBUG 1
+RUN pip install --no-cache-dir -r requirements.dev.txt
 COPY ./src/ .
 COPY ./tests .
 CMD ["python", "-c", "from noname import __version__; print(f'version in dev: {__version__}')"]
 
 FROM base-deps as production-build
 
-RUN pip install -r requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt .
 COPY ./src/ .
 RUN pip install .
 
 FROM base as production
 
-ENV PYTHONASYNCIODEBUG 1
+EXPOSE 80
 COPY --from=production-build /opt/noname/venv /opt/noname/venv
-CMD ["python", "-c", "from noname import __version__; print(f'version in prod: {__version__}')"]
+#CMD ["python", "-c", "from noname import __version__; print(f'version in prod: {__version__}')"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--workers", "3", "-b", "0.0.0.0:80", "noname.main:app"]
