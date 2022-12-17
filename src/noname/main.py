@@ -14,8 +14,6 @@ from fastapi.routing import APIRouter
 
 initialize_logging()
 
-print(logging.root.manager.loggerDict.keys())
-
 
 view_logger = logging.getLogger('main.view')
 router = APIRouter(route_class=TimedRoute)
@@ -40,6 +38,10 @@ books = Table(
     Column('title', String),
     Column('primary_author', String),
 )
+
+
+def create_current_database():
+    metadata.create_all(engine)
 
 
 def db_client():
