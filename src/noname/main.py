@@ -1,48 +1,53 @@
+import logging
 import random
-import time
-import uuid
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from sqlalchemy import create_engine, MetaData, Column, Table, String, Integer
+from sqlalchemy.orm import sessionmaker, Session
 
 from noname.services.hostname import HostnameService
-from noname.utils import request_id_context
-from noname.conf import *
+from noname.utils import TimedRoute
+from noname.conf import initialize_logging
 
-from fastapi.routing import APIRoute, APIRouter
-from starlette.background import BackgroundTask
+from fastapi.routing import APIRouter
+
+
+initialize_logging()
+
+print(logging.root.manager.loggerDict.keys())
 
 
 view_logger = logging.getLogger('main.view')
-
-
-class TimedRoute(APIRoute):
-
-    def log_info(self, req_body, res_body):
-        view_logger.info('Request summary', extra={'request': req_body.decode(), 'response': res_body.decode()})
-
-    def get_route_handler(self):
-        original_route_handler = super().get_route_handler()
-
-        # Request gets here when path exists.
-        async def custom_route_handler(request):
-            # TODO: Check if request-id is already in the header. If so, then populate it to the context.
-            request_id = uuid.uuid4().hex
-            request_id_context.set(request_id)
-            start_time = time.perf_counter()
-            req_body = await request.body()
-            response = await original_route_handler(request)
-            end_time = time.perf_counter() - start_time
-            response.headers['X-REQUEST-DURATION'] = str(format(end_time, '.3f'))
-            response.headers['X-REQUEST-ID'] = str(request_id_context.get())
-            res_body = response.body
-            response.background = BackgroundTask(self.log_info, req_body, res_body)
-            return response
-
-        return custom_route_handler
-
-
-app = FastAPI()
 router = APIRouter(route_class=TimedRoute)
+app = FastAPI()
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+)
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
+
+
+metadata = MetaData()
+books = Table(
+    'book', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('title', String),
+    Column('primary_author', String),
+)
+
+
+def db_client():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @router.get('/')
@@ -58,9 +63,10 @@ async def home():
 
 
 @router.get('/test')
-async def test():
+async def test(db: Session = Depends(db_client)):
     view_logger.debug('Hello World', extra={'hello': 'extra'})
-    return {'hello': 'test'}
+    [result] = db.execute('SELECT 1;').first()
+    return {'hello': result}
 
 
 app.include_router(router)

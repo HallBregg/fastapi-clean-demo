@@ -1,7 +1,7 @@
 import logging
 
 
-class RequestIdInjectorFilter(logging.Filter):
+class RequestInjectorFilter(logging.Filter):
     def __init__(self, name='request_id_injector'):
         from noname.utils import request_id_context
         super().__init__(name)
@@ -12,7 +12,7 @@ class RequestIdInjectorFilter(logging.Filter):
             setattr(record, 'request_id', self._request_id_context.get())
         except LookupError:
             # Application has not started yet. CustomFilter is applied on process manager logs.
-            record.request_id = None
+            setattr(record, 'request_id', None)
 
     def filter(self, record: logging.LogRecord) -> bool:
         self._logic(record)
@@ -38,32 +38,35 @@ class ExtraFormatter(logging.Formatter):
         return super().format(record)
 
 
-level = logging.DEBUG
+def initialize_logging():
+    level = logging.DEBUG
 
-# Configure root logging. Catch all loggers from dependencies.
-# https://github.com/encode/uvicorn/issues/680#issuecomment-675495385
-for log_name in logging.root.manager.loggerDict.keys():
-    if log_name in []:  # list of loggers
-        logging.getLogger(log_name).handlers = [logging.NullHandler()]
-        logging.getLogger(log_name).propagate = False
-    else:
-        logging.getLogger(log_name).handlers = []
-        logging.getLogger(log_name).propagate = True
+    logger_handler = logging.StreamHandler()
+    logger_handler.setFormatter(ExtraFormatter())
+    logger_handler.addFilter(RequestInjectorFilter())
+    logging.root.handlers = [logger_handler]
+    logging.root.setLevel(level)
 
-logger_handler = logging.StreamHandler()
-logger_handler.setFormatter(ExtraFormatter())
-logger_handler.addFilter(RequestIdInjectorFilter())
-logging.root.handlers = [logger_handler]
-logging.root.setLevel(level)
+    # Configure root logging. Catch all loggers from dependencies.
+    # https://github.com/encode/uvicorn/issues/680#issuecomment-675495385
+    for log_name in logging.root.manager.loggerDict.keys():
+        if log_name in []:  # list of loggers
+            logging.getLogger(log_name).handlers = [logging.NullHandler()]
+            logging.getLogger(log_name).propagate = False
+        else:
+            logging.getLogger(log_name).handlers = []
+            logging.getLogger(log_name).setLevel(level)
+            logging.getLogger(log_name).propagate = True
 
+    # logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
-# Configure application logger (root for this app).
-logger = logging.getLogger('main')
-logger.propagate = False
+    # Configure application logger (root for this app).
+    logger = logging.getLogger('main')
+    logger.propagate = False
 
-logger_handler = logging.StreamHandler()
-logger_handler.setFormatter(ExtraFormatter())
-logger_handler.addFilter(RequestIdInjectorFilter())
+    logger_handler = logging.StreamHandler()
+    logger_handler.setFormatter(ExtraFormatter())
+    logger_handler.addFilter(RequestInjectorFilter())
 
-logger.handlers = [logger_handler]
-logger.setLevel(level)
+    logger.handlers = [logger_handler]
+    logger.setLevel(level)
