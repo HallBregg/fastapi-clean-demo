@@ -55,4 +55,11 @@ FROM base as production
 EXPOSE 80
 COPY --from=production-build /opt/noname/venv /opt/noname/venv
 #CMD ["python", "-c", "from noname import __version__; print(f'version in prod: {__version__}')"]
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--workers", "3", "-b", "0.0.0.0:80", "noname.main:app"]
+CMD [
+"gunicorn",
+"--worker-tmp-dir", "/dev/shm",
+"-k", "uvicorn.workers.UvicornWorker",
+"--workers", "3",
+"-b", "0.0.0.0:80",
+"noname.main:app"
+]

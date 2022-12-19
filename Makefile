@@ -25,3 +25,6 @@ local-run-uvicorn:
 
 local-run-gunicorn:
 	gunicorn -k uvicorn.workers.UvicornWorker --reload --workers 1 noname.main:app
+
+local-run-tests:
+	pytest -v -s
