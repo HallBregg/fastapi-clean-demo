@@ -15,6 +15,9 @@ from fastapi.routing import APIRouter
 
 initialize_logging()
 
+# https://tapoueh.org/blog/2018/11/preventing-sql-injections/
+# https://medium.com/@estretyakov/the-ultimate-async-setup-fastapi-sqlmodel-alembic-pytest-ae5cdcfed3d4
+
 
 view_logger = logging.getLogger('main.view')
 app_logger = logging.getLogger('main.app')
