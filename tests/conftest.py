@@ -55,7 +55,7 @@ async def db_fixture():
     db = Database(
         name='example',
         host='localhost',
-        port=5432,
+        port=5433,
         username='example',
         password='example',
     )

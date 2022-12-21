@@ -5,31 +5,16 @@ volumes:
 
 
 services:
-
-  noname:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    container_name: noname
-    volumes:
-      - ./src/noname:/opt/noname/noname
-    expose:
-      - 8000
-    ports:
-      - "8000:8000"
-    command: "uvicorn noname.main:app --reload --host 0.0.0.0 --port 8000"
-
   db:
     image: postgres:latest
     restart: always
-    container_name: noname.db
+    container_name: noname.test.db
     environment:
       POSTGRES_PASSWORD: example
       POSTGRES_USER: example
       POSTGRES_DB: example
     ports:
-      - "5432:5432"
+      - "5433:5432"
     # Use in memory storage to increase performance.
     # Important in tests.
     volumes:
