@@ -1,10 +1,11 @@
 import logging
 import random
 
+import asyncpg
 from fastapi import FastAPI, Depends
-from sqlalchemy import create_engine, MetaData, Column, Table, String, Integer
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import MetaData, Column, Table, String, Integer
 
+from noname.db import Database
 from noname.services.hostname import HostnameService
 from noname.utils import TimedRoute
 from noname.conf import initialize_logging
@@ -14,23 +15,14 @@ from fastapi.routing import APIRouter
 
 initialize_logging()
 
-print(logging.root.manager.loggerDict.keys())
+# https://tapoueh.org/blog/2018/11/preventing-sql-injections/
+# https://medium.com/@estretyakov/the-ultimate-async-setup-fastapi-sqlmodel-alembic-pytest-ae5cdcfed3d4
 
 
 view_logger = logging.getLogger('main.view')
+app_logger = logging.getLogger('main.app')
 router = APIRouter(route_class=TimedRoute)
 app = FastAPI()
-
-SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-)
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
 
 
 metadata = MetaData()
@@ -42,12 +34,30 @@ books = Table(
 )
 
 
-def db_client():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+DB_CONNECTION_STRING = "postgresql://example:example@localhost/example"
+database = Database(name='example', host='localhost', port=5432, username='example', password='example')
+
+
+async def get_db_connection():
+    async with database.pool.acquire() as connection:
+        yield connection
+
+
+@app.on_event('startup')
+async def startup_event_handler():
+    app_logger.info('Handling startup event.')
+    await database.connect()
+    app_logger.info(f'Created database pool.'
+                    f'Available connections: {database.pool.get_size()}.')
+
+
+@app.on_event('shutdown')
+async def shutdown_event_handler():
+    app_logger.info('Handling shutdown event.')
+    await database.disconnect()
+    app_logger.info(f'Closed all database connections.'
+                    f'Available connections: {database.pool.get_size()}.'
+                    f'Database disconnected.')
 
 
 @router.get('/')
@@ -63,9 +73,10 @@ async def home():
 
 
 @router.get('/test')
-async def test(db: Session = Depends(db_client)):
+async def test(db_connection: asyncpg.Connection = Depends(get_db_connection)):
+    row = await db_connection.fetchrow('''SELECT 1 as result, pg_sleep(1) as sleep;''')
+    result = row['result']
     view_logger.debug('Hello World', extra={'hello': 'extra'})
-    [result] = db.execute('SELECT 1;').first()
     return {'hello': result}
 
 

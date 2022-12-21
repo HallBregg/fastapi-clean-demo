@@ -5,3 +5,4 @@ __pycache__
 venv
 dist
 /sql_app.db
+/.pytest_cache/

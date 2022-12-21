@@ -1,5 +1,11 @@
 version: "3"
+
+volumes:
+  db: {}
+
+
 services:
+
   noname:
     build:
       context: .
@@ -13,3 +19,22 @@ services:
     ports:
       - "8000:8000"
     command: "uvicorn noname.main:app --reload --host 0.0.0.0 --port 8000"
+
+  db:
+    image: postgres:latest
+    restart: always
+    container_name: noname.db
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_USER: example
+      POSTGRES_DB: example
+    ports:
+      - "5432:5432"
+    # Use in memory storage to increase performance.
+    # Important in tests.
+    volumes:
+      - type: tmpfs
+        target: /var/lib/postgresql/data
+      - type: tmpfs
+        target: /dev/shm
+    command: ["postgres", "-c", "log_statement=all"]

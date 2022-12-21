@@ -3,3 +3,6 @@
 
 pytest
 build
+alembic
+psycopg2-binary
+pytest-asyncio

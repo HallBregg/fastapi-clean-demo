@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Exit when any command fails
+set -e
+
+python -c "from noname import __version__; print(__version__);"
+python -c "from noname.main import create_current_database; create_current_database()"

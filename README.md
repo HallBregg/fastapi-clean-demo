@@ -38,3 +38,40 @@ ab -n 50 -c 5 -k http://local.awaitq.com:8000/
 
 We could use Poetry for dependency management, but only for local (non docker).
 In docker, we could export from portainer requirements.txt file and install dependencies by pip.
+
+
+## Alembic
+
+We can use symbols like head, heads or base, current to specify the current revision(s).
+
+```shell
+alembic revision -m "Migration message"
+```
+
+```shell
+alembic upgrade head
+```
+
+```shell
+alembic upgrade +1
+```
+
+```shell
+alembic downgrade -1
+```
+
+```shell
+ alembic upgrade <previous>:<current> --sql
+```
+
+```shell
+ alembic downgrade <current>:<previous> --sql
+```
+
+```shell
+alembic downgrade head:base --sql
+```
+
+```shell
+alembic downgrade base
+```
