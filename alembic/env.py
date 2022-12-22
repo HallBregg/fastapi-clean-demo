@@ -21,7 +21,10 @@ if config.config_file_name is not None:
 #
 # from noname.main import metadata
 # target_metadata = metadata
-target_metadata = None
+# target_metadata = None
+
+from noname.models import metadata
+target_metadata = metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

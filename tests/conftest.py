@@ -1,3 +1,5 @@
+import os
+
 import pytest_asyncio
 
 from noname.db import Database
@@ -37,6 +39,14 @@ DELETE_DB_QUERY = '''
         
         COMMIT;
     '''
+
+
+with open('current.sql', 'r') as current_sql:
+    CREATE_DB_QUERY2 = current_sql.read()
+
+
+with open('drop.sql', 'r') as drop_sql:
+    DELETE_DB_QUERY2 = drop_sql.read()
 
 
 async def create_database(db):

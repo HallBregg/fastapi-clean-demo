@@ -45,6 +45,10 @@ In docker, we could export from portainer requirements.txt file and install depe
 We can use symbols like head, heads or base, current to specify the current revision(s).
 
 ```shell
+alembic revision --autogenerate -m "Migration message."
+```
+
+```shell
 alembic revision -m "Migration message"
 ```
 
