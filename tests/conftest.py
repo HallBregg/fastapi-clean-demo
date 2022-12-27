@@ -6,53 +6,47 @@ from noname.db import Database
 
 
 CREATE_DB_QUERY = '''
-        BEGIN;
-        
-        CREATE TABLE alembic_version (
-            version_num VARCHAR(32) NOT NULL, 
-            CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
-        );
-        
-        -- Running upgrade  -> c6ec6d05af2d
-        
-        CREATE TABLE book (
-            id SERIAL NOT NULL, 
-            title VARCHAR, 
-            primary_author VARCHAR, 
-            PRIMARY KEY (id)
-        );
-        
-        INSERT INTO alembic_version (version_num) VALUES ('c6ec6d05af2d') RETURNING alembic_version.version_num;
-        
-        COMMIT;
-        '''
+BEGIN;
+
+CREATE TABLE link (
+    id BIGSERIAL NOT NULL, 
+    url VARCHAR, 
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now(), 
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE tag (
+    name VARCHAR, 
+    UNIQUE (name)
+);
+
+CREATE TABLE link_tag (
+    link_id BIGINT, 
+    tag_name VARCHAR, 
+    FOREIGN KEY(link_id) REFERENCES link (id), 
+    FOREIGN KEY(tag_name) REFERENCES tag (name)
+);
+
+COMMIT;
+'''
+
+
 DELETE_DB_QUERY = '''
-        BEGIN;
-        
-        -- Running downgrade c6ec6d05af2d -> 
-        
-        DROP TABLE book;
-        
-        DELETE FROM alembic_version WHERE alembic_version.version_num = 'c6ec6d05af2d';
-        
-        DROP TABLE alembic_version;
-        
-        COMMIT;
-    '''
+BEGIN;
 
+DROP TABLE link_tag;
 
-with open('current.sql', 'r') as current_sql:
-    CREATE_DB_QUERY2 = current_sql.read()
+DROP TABLE tag;
 
+DROP TABLE link;
 
-with open('drop.sql', 'r') as drop_sql:
-    DELETE_DB_QUERY2 = drop_sql.read()
+COMMIT;
+'''
 
 
 async def create_database(db):
     async with db.pool.acquire() as connection:
         await connection.execute(CREATE_DB_QUERY)
-        await connection.execute('''INSERT INTO book (title, primary_author) VALUES ('My title', 'Some Author')''')
 
 
 async def drop_database(db):
