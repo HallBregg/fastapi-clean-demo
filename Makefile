@@ -28,3 +28,7 @@ local-run-gunicorn:
 
 local-run-tests:
 	pytest -v -s
+
+docker-run-test-env:
+	docker compose -f docker-compose.test.yaml down
+	docker compose -f docker-compose.test.yaml up
